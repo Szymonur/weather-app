@@ -3,6 +3,9 @@
         <div class="c-weather__form">
             <input type="text" v-model="city"> <button v-on:click="fetchCoordinates()">Check</button>
         </div>
+        <div v-if="error != ''" class="c-weather__error_message">
+            {{ error }}
+        </div>
         <div class="c-weather__box">
             <div class="c-weather__box__header">
                 <h2>{{ coordinates.name}} <br>
@@ -18,7 +21,7 @@
                      <br>
                      <div class="c-weather__box__list__element__rain"> {{ e.rain }} mm</div> 
                      <div class="c-weather__box__list__element__wind"> {{ e.windspeed }} km/h</div> 
-                     <div class="c-weather__box__list__element__cloudcover"> {{ e.cloudcover }} %</div> 
+                     <div class="c-weather__box__list__element__cloudcover"> {{ e.cloudcover }} % </div> 
                      
 
                 </div>
@@ -37,7 +40,8 @@
                 weather: '',
                 currentTemperature: '',
                 currentIcon: '',
-                segregatedData: []
+                segregatedData: [],
+                error: '',
             }
         },
         mounted() {
@@ -72,7 +76,6 @@
                      element.windspeed = this.weather.hourly.windspeed_10m[i];
                      element.cloudcover = this.weather.hourly.cloudcover[i];
                      element.icon = this.GiveIcon(element.cloudcover, element.rain)
-
                      this.segregatedData.push(element);
 
                 }
@@ -105,14 +108,24 @@
                 };
                 const response = await fetch('https://api.api-ninjas.com/v1/city?name=' + this.city, requestOptions);
                 const jsonData = await response.json();
-                this.coordinates = jsonData[0]
-                if (jsonData != []){
-                    this.fetchWearher();
+                if(jsonData.length == 0){
+                    this.error = "We can't find " + this.city;
+                    return;
+                } else{
+                    this.error = '';
                 }
+                this.coordinates = jsonData[0]
+                this.fetchWearher();
             },
             async fetchWearher(){
                 const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude='+ this.coordinates.latitude +'&longitude='+ this.coordinates.longitude +'&hourly=temperature_2m,rain,windspeed_10m,cloudcover&forecast_days=1&timezone=Europe%2FBerlin');
                 const jsonData = await response.json();
+                if ( jsonData.length == 0){
+                    this.error = "We don't kow what weather is in " + this.city +". Sorry!";
+                    return
+                } else {
+                    this.error = '';
+                }
                 this.weather = jsonData;
                 this.SegregateData();   
                 this.CurrentTemperature();
@@ -146,7 +159,14 @@
         display: flex;
         flex-direction: column;
         color: #0e1138;
-
+        &__error_message{
+            width: 100%;
+            padding: 10px 0 10px 0;
+            font-weight: bold;
+            font-size: 1.5rem;
+            text-align: center;
+            color: rgba(117, 10, 10, 0.993);
+        }
         &__box{
             h3{
                 text-align: center;
